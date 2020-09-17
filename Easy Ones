@@ -97,7 +97,9 @@ Given the Employee table, write a SQL query that finds out employees who earn mo
 
 ANSWER :   
 
-SELECT NAME AS EMPLOYEE FROM EMPLOYEE A WHERE MANAGERID IS NOT NULL AND SALARY > (SELECT SALARY FROM EMPLOYEE B WHERE A.MANAGERID = B.ID);  
+Select Name as Employee from Employee a
+where ManagerId IS NOT NULL 
+AND SALARY > (select salary from employee b where a.ManagerId = b.Id);
 
 SELECT A.NAME AS EMPLOYEE FROM EMPLOYEE AS A JOIN EMPLOYEE AS B ON A.MANAGERID = B.ID AND A.SALARY > B.SALARY; 
 
