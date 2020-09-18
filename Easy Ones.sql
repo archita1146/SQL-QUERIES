@@ -1,7 +1,5 @@
-## COMBINE TWO TABLES: 
-
+-- 1. COMBINE TWO TABLES: 
 Table: Person 
-
 +-------------+---------+ 
 | Column Name | Type    | 
 +-------------+---------+ 
@@ -12,7 +10,6 @@ Table: Person
 PersonId is the primary key column for this table.
 
 Table: Address 
-
 +-------------+---------+ 
 | Column Name | Type    | 
 +-------------+---------+ 
@@ -22,19 +19,13 @@ Table: Address
 | State       | varchar | 
 +-------------+---------+ 
 AddressId is the primary key column for this table. 
-Write a SQL query for a report that provides the following information for each person in the Person table, regardless if there is an address for each of those people: 
+-- Write a SQL query for a report that provides the following information for each person in the Person table, regardless if there is an address for each of those people: FirstName, LastName, City, State 
 
-FirstName, LastName, City, State 
-
-ANSWER :   
+-- ANSWER :   
 Select Person.FirstName, Person.LastName, Address.City, Address.State from Person LEFT JOIN Address on Person.PersonId = Address.PersonId; 
 
- 
-
-## SECOND HIGHEST SALARY: 
-
-Write a SQL query to get the second highest salary from the Employee table. 
-
+-- 2. SECOND HIGHEST SALARY: 
+-- Write a SQL query to get the second highest salary from the Employee table. 
 +----+--------+ 
 | Id | Salary | 
 +----+--------+ 
@@ -42,38 +33,21 @@ Write a SQL query to get the second highest salary from the Employee table.
 | 2  | 200    | 
 | 3  | 300    | 
 +----+--------+ 
- For example, given the above Employee table, the query should return 200 as the second highest salary. If there is no second highest salary, then the query should return null. 
 
-+---------------------+ 
-| SecondHighestSalary | 
-+---------------------+ 
-| 200                 | 
-+---------------------+ 
-
-ANSWER :   
+-- ANSWERS :   
 
 with A AS 
-
 (SELECT *, DENSE_RANK() OVER(ORDER BY SALARY DESC) AS RANK_SALARY FROM EMPLOYEE) 
-
 SELECT SALARY AS SecondHighestSalary from A where RANK_SALARY = 2; 
-
- 
 
 SELECT (SELECT DISTINCT(salary) FROM employee ORDER BY salary desc LIMIT 1 OFFSET 1) AS SecondHighestSalary; 
 
 SELECT SALARY AS SecondHighestSalary from Employee 
-
 WHERE SALARY < (Select max(salary) from employee) limit 1 offset 1; 
 
- 
-
-## EMPLOYEE EARNING MORE THAN MANAGERS: 
+-- 3 EMPLOYEE EARNING MORE THAN MANAGERS: 
 
 The Employee table holds all employees including their managers. Every employee has an Id, and there is also a column for the manager Id. 
-
- 
-
 +----+-------+--------+-----------+ 
 | Id | Name  | Salary | ManagerId | 
 +----+-------+--------+-----------+ 
@@ -83,30 +57,18 @@ The Employee table holds all employees including their managers. Every employee 
 | 4  | Max   | 90000  | NULL      | 
 +----+-------+--------+-----------+ 
 
-Given the Employee table, write a SQL query that finds out employees who earn more than their managers. For the above table, Joe is the only employee who earns more than his manager. 
+-- Given the Employee table, write a SQL query that finds out employees who earn more than their managers. For the above table, Joe is the only employee who earns more than his manager. 
 
-+----------+ 
-| Employee | 
-+----------+ 
-| Joe      | 
-+----------+ 
-
- 
-
- 
-
-ANSWER :   
-
+-- ANSWERS :   
 Select Name as Employee from Employee a
 where ManagerId IS NOT NULL 
 AND SALARY > (select salary from employee b where a.ManagerId = b.Id);
 
 SELECT A.NAME AS EMPLOYEE FROM EMPLOYEE AS A JOIN EMPLOYEE AS B ON A.MANAGERID = B.ID AND A.SALARY > B.SALARY; 
 
+-- 4. DUPLICATE MAILS: 
 
-## DUPLICATE MAILS: 
-
-Write a SQL query to find all duplicate emails in a table named Person. 
+-- Write a SQL query to find all duplicate emails in a table named Person. 
 
 +----+---------+ 
 | Id | Email   | 
@@ -115,23 +77,334 @@ Write a SQL query to find all duplicate emails in a table named Person.
 | 2  | c@d.com | 
 | 3  | a@b.com | 
 +----+---------+ 
- 
-
-For example, your query should return the following for the above table: 
-
-+---------+ 
-| Email   | 
-+---------+ 
-| a@b.com | 
-+---------+ 
- 
-
 Note: All emails are in lowercase. 
 
+ANSWER :   
+SELECT email from person group by email having count(email) > 2 
+select distinct a.email as email from person a join person b where a.email = b.email and a.id != b.id; 
  
+-- 5. CUSTOMER WHO NEVER ORDER:
+-- Suppose that a website contains two tables, the Customers table and the Orders table. Write a SQL query to find all customers who never order anything.
+
+Table: Customers.
++----+-------+
+| Id | Name  |
++----+-------+
+| 1  | Joe   |
+| 2  | Henry |
+| 3  | Sam   |
+| 4  | Max   |
++----+-------+
+Table: Orders.
++----+------------+
+| Id | CustomerId |
++----+------------+
+| 1  | 3          |
+| 2  | 1          |
++----+------------+
+
+ANSWER : 
+SELECT a.Name as Customers from Customers a Left Join Orders b On a.id = b.customerId where b.CustomerId IS NULL;
+select name as customers from Customers where ID NOT IN (SELECT CUSTOMERID FROM ORDERS);
+
+-- 6. DELETE DUPLICATE EMAILS: 
+-- Write a SQL query to delete all duplicate email entries in a table named Person, keeping only unique emails based on its smallest Id. 
++----+------------------+
+| Id | Email            |
++----+------------------+
+| 1  | john@example.com |
+| 2  | bob@example.com  |
+| 3  | john@example.com |
++----+------------------+ 
+-- Id is the primary key column for this table.  
+--For example, after running your query, the above Person table should have the following rows: 
++----+------------------+
+| Id | Email            |
++----+------------------+
+| 1  | john@example.com |
+| 2  | bob@example.com  |
++----+------------------+ 
+-- Note: Your output is the whole Person table after executing your sql. Use delete statement. 
 
 ANSWER :   
+DELETE FROM Person WHERE Id NOT IN  
+(SELECT * FROM( 
+    SELECT MIN(Id) FROM Person GROUP BY Email) as p); 
+    
+DELETE A.* FROM PERSON A JOIN PERSON B ON A.EMAIL = B.EMAIL WHERE A.EMAIL = B.EMAIL AND A.ID > B.ID; 
 
-SELECT email from person group by email having count(email) > 2 
+-- 7. RISING TEMPERATURE:
+-- Table: Weather 
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| id            | int     |
+| recordDate    | date    |
+| temperature   | int     |
++---------------+---------+
+-- id is the primary key for this table. This table contains information about the temperature in a certain day.  
+-- Write an SQL query to find all dates' id with higher temperature compared to its previous dates (yesterday). 
+-- Return the result table in any order.The query result format is in the following example: 
 
-select distinct a.email as email from person a join person b where a.email = b.email and a.id != b.id; 
+Weather
++----+------------+-------------+
+| id | recordDate | Temperature |
++----+------------+-------------+
+| 1  | 2015-01-01 | 10          |
+| 2  | 2015-01-02 | 25          |
+| 3  | 2015-01-03 | 20          |
+| 4  | 2015-01-04 | 30          |
++----+------------+-------------+
+
+Result table:
++----+
+| id |
++----+
+| 2  |
+| 4  |
++----+
+-- In 2015-01-02, temperature was higher than the previous day (10 -> 25).
+-- In 2015-01-04, temperature was higher than the previous day (30 -> 20).
+
+ANSWER :  
+Select a.id as id from weather a, weather b WHERE datediff(a.recordDate, b.recordDate) = 1 AND a.temperature > b.temperature; 
+
+Select a.id as id from weather a join weather b on datediff(a.recordDate, b.recordDate) = 1 and a.temperature > b.temperature; 
+
+-- 8. GAME PLAY ANALYSIS 1: 
+Table: Activity  
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| player_id    | int     |
+| device_id    | int     |
+| event_date   | date    |
+| games_played | int     |
++--------------+---------+
+-- (player_id, event_date) is the primary key of this table. 
+-- This table shows the activity of players of some game. Each row is a record of a player who logged in and played a number of games (possibly 0) before logging out on some day using some device.  
+-- Write an SQL query that reports the first login date for each player. 
+
+-- The query result format is in the following example:   
+Activity table:
++-----------+-----------+------------+--------------+
+| player_id | device_id | event_date | games_played |
++-----------+-----------+------------+--------------+
+| 1         | 2         | 2016-03-01 | 5            |
+| 1         | 2         | 2016-05-02 | 6            |
+| 2         | 3         | 2017-06-25 | 1            |
+| 3         | 1         | 2016-03-02 | 0            |
+| 3         | 4         | 2018-07-03 | 5            |
++-----------+-----------+------------+--------------+
+Result table:
++-----------+-------------+
+| player_id | first_login |
++-----------+-------------+
+| 1         | 2016-03-01  |
+| 2         | 2017-06-25  |
+| 3         | 2016-03-02  |
++-----------+-------------+  
+
+ANSWER : 
+-- #Using Group By 
+SELECT player_id, min(event_date) as first_login from Activity group by player_id order by player_id; 
+
+-- #windows function rank  
+with T AS 
+Select *, rank() over(partition by player_id order by event_date) as rank_number from activity) 
+select t.player_id, t.event_date as first_login from T where rank_number = 1; 
+
+-- #windows function dense_rank 
+select a.player_id,a.event_date as first_login 
+from (select player_id,event_date,dense_rank() over (partition by player_id order by event_date) as Rank_number from activity) as a 
+where Rank_number < 2; 
+
+-- 9. GAME PLAY ANALYSIS 2: 
+Table: Activity  
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| player_id    | int     |
+| device_id    | int     |
+| event_date   | date    |
+| games_played | int     |
++--------------+---------+
+-- (player_id, event_date) is the primary key of this table. 
+-- This table shows the activity of players of some game. Each row is a record of a player who logged in and played a number of games (possibly 0) before logging out on some day using some device.  
+-- Write a SQL query that reports the device that is first logged in for each player. 
+
+-- The query result format is in the following example:   
+Activity table:
++-----------+-----------+------------+--------------+
+| player_id | device_id | event_date | games_played |
++-----------+-----------+------------+--------------+
+| 1         | 2         | 2016-03-01 | 5            |
+| 1         | 2         | 2016-05-02 | 6            |
+| 2         | 3         | 2017-06-25 | 1            |
+| 3         | 1         | 2016-03-02 | 0            |
+| 3         | 4         | 2018-07-03 | 5            |
++-----------+-----------+------------+--------------+
+Result table:
++-----------+-----------+
+| player_id | device_id |
++-----------+-----------+
+| 1         | 2         |
+| 2         | 3         |
+| 3         | 1         |
++-----------+-----------+ 
+
+ANSWER : 
+-- #Using Group By 
+SELECT player_id, device_id from Activity group by player_id order by event_date; 
+
+-- #windows function rank  
+with T AS 
+Select *, rank() over(partition by player_id order by event_date) as rank_number from activity) 
+select t.player_id, t.device_id from T where rank_number = 1; 
+
+-- #windows function dense_rank 
+select a.player_id,a.device_id 
+from (select player_id,device_id,dense_rank() over (partition by player_id order by event_date) as Rank_number from activity) as a 
+where Rank_number = 1; 
+
+-- 10. EMPLOYEE BONUS: 
+-- Select all employee's name and bonus whose bonus is < 1000. 
+Table:Employee 
++-------+--------+-----------+--------+
+| empId |  name  | supervisor| salary |
++-------+--------+-----------+--------+
+|   1   | John   |  3        | 1000   |
+|   2   | Dan    |  3        | 2000   |
+|   3   | Brad   |  null     | 4000   |
+|   4   | Thomas |  3        | 4000   |
++-------+--------+-----------+--------+
+-- empId is the primary key column for this table.  
+
+Table: Bonus 
++-------+-------+
+| empId | bonus |
++-------+-------+
+| 2     | 500   |
+| 4     | 2000  |
++-------+-------+
+empId is the primary key column for this table.
+Example ouput:
++-------+-------+
+| name  | bonus |
++-------+-------+
+| John  | null  |
+| Dan   | 500   |
+| Brad  | null  |
++-------+-------+
+
+ANSWER : 
+Select a.name, b.bonus from Employee a left Join Bonus b On a.empId = b.empId where b.bonus < 1000 or b.bonus is null; 
+
+-- USING COALESCE
+Select a.name, b.bonus from Employee a left Join Bonus b On a.empId = b.empId where coalesce(b.bonus, 0) < 1000; 
+
+-- 11. FIND CUSTOMER REFEREE: 
+-- Given a table customer holding customers information and the referee. 
++------+------+-----------+
+| id   | name | referee_id|
++------+------+-----------+
+|    1 | Will |      NULL |
+|    2 | Jane |      NULL |
+|    3 | Alex |         2 |
+|    4 | Bill |      NULL |
+|    5 | Zack |         1 |
+|    6 | Mark |         2 |
++------+------+-----------+
+
+-- Write a query to return the list of customers NOT referred by the person with id '2'.  
++------+
+| name |
++------+
+| Will |
+| Jane |
+| Bill |
+| Zack |
++------+
+
+ANSWER : 
+-- USING COALESCE
+Select name from customer where coalesce(referee_id, 0) != 2; 
+
+SELECT name FROM customer WHERE referee_id IS NULL OR referee_id <> 2;
+
+-- 12. CUSTOMER PLACING THE LARGEST NUMBER OF ORDERS: 
+-- Query the customer_number from the orders table for the customer who has placed the largest number of orders. 
+-- It is guaranteed that exactly one customer will have placed more orders than any other customer. 
+
+The orders table is defined as follows: 
+| Column | Type | 
+|-------------------|-----------| 
+| order_number (PK) | int | 
+| customer_number | int | 
+| order_date | date | 
+| required_date | date | 
+| shipped_date | date | 
+| status | char(15) | 
+| comment | char(200) | 
+ 
+Sample Input 
+| order_number | customer_number | order_date | required_date | shipped_date | status | comment | 
+|--------------|-----------------|------------|---------------|--------------|--------|---------| 
+| 1 | 1 | 2017-04-09 | 2017-04-13 | 2017-04-12 | Closed | | 
+| 2 | 2 | 2017-04-15 | 2017-04-20 | 2017-04-18 | Closed | | 
+| 3 | 3 | 2017-04-16 | 2017-04-25 | 2017-04-20 | Closed | | 
+| 4 | 3 | 2017-04-18 | 2017-04-28 | 2017-04-25 | Closed | | 
+ 
+Sample Output 
+| customer_number | 
+|-----------------| 
+| 3 | 
+ 
+-- Explanation 
+-- The customer with number '3' has two orders, which is greater than either customer '1' or '2' because each of them only has one order.  
+-- So the result is customer_number '3'. 
+-- Follow up: What if more than one customer have the largest number of orders, can you find all the customer_number in this case? 
+
+ANSWER : 
+SELECT CUSTOMER_NUMBER FROM ORDERS GROUP BY CUSTOMER_NUMBER HAVING COUNT(CUSTOMER_NUMBER) > 1; 
+
+-- USING WINDOWS FUNCTION
+with T AS
+ (SELECT customer_number, rank() over(partition by customer_number order by      order_number) as cust_rank from orders)
+select customer_number from t where cust_rank > 1 order by t.cust_rank desc limit 1; 
+
+select customer_number from (select customer_number, rank() over(partition by customer_number order by order_number) as cust_rank from orders) T where T.cust_rank > 1 ORDER BY T.cust_rank DESC LIMIT 1; 
+
+-- USING GROUP BY
+SELECT CUSTOMER_NUMBER FROM ORDERS GROUP BY CUSTOMER_NUMBER order by count(customer_number) desc limit 1;
+
+-- 13. BIG COUNTRIES: 
+-- There is a table World 
++-----------------+------------+------------+--------------+---------------+
+| name            | continent  | area       | population   | gdp           |
++-----------------+------------+------------+--------------+---------------+
+| Afghanistan     | Asia       | 652230     | 25500100     | 20343000      |
+| Albania         | Europe     | 28748      | 2831741      | 12960000      |
+| Algeria         | Africa     | 2381741    | 37100000     | 188681000     |
+| Andorra         | Europe     | 468        | 78115        | 3712000       |
+| Angola          | Africa     | 1246700    | 20609294     | 100990000     |
++-----------------+------------+------------+--------------+---------------+
+-- A country is big if it has an area of bigger than 3 million square km or a population of more than 25 million. 
+-- Write a SQL solution to output big countries' name, population and area. 
+-- For example, according to the above table, we should output: 
++--------------+-------------+--------------+
+| name         | population  | area         |
++--------------+-------------+--------------+
+| Afghanistan  | 25500100    | 652230       |
+| Algeria      | 37100000    | 2381741      |
++--------------+-------------+--------------+
+
+ANSWER : 
+-- #using OR 
+SELECT name, population, area from World WHERE area > '3000000' OR population > '25000000'; 
+-- #USING UNION 
+SELECT name, population, area FROM world WHERE area > 3000000 UNION SELECT name, population, area FROM world WHERE population > 25000000; 
+
+ 
+
+
