@@ -405,6 +405,84 @@ SELECT name, population, area from World WHERE area > '3000000' OR population > 
 -- #USING UNION 
 SELECT name, population, area FROM world WHERE area > 3000000 UNION SELECT name, population, area FROM world WHERE population > 25000000; 
 
+-- 14. CLASSES MORE THAN 5 STUDENTS: 
+-- There is a table courses with columns: student and class 
+-- Please list out all classes which have more than or equal to 5 students. 
+-- For example, the table:  
+   +---------+------------+
+| student | class      |
++---------+------------+
+| A       | Math       |
+| B       | English    |
+| C       | Math       |
+| D       | Biology    |
+| E       | Math       |
+| F       | Computer   |
+| G       | Math       |
+| H       | Math       |
+| I       | Math       |
++---------+------------+
+
+-- Should output:  
++---------+
+| class   |
++---------+
+| Math    |
++---------+
+-- Note: 
+-- The students should not be counted duplicate in each course. 
+
+ANSWER : 
+-- #Using group by
+SELECT CLASS FROM COURSES GROUP BY CLASS having count(distinct student) >= 5; 
+-- # Using Subquery
+SELECT CLASS FROM  (SELECT COUNT(DISTINCT STUDENT) AS CNT, CLASS FROM COURSES GROUP BY CLASS) T WHERE CNT >= 5;
+
+-- 15. FRIEND REQUESTS |: OVERALL ACCEPTANCE RATE: 
+-- In social network like Facebook or Twitter, people send friend requests and accept others’ requests as well. Now given two tables as below: 
+Table: friend_request
+| sender_id | send_to_id |request_date|
+|-----------|------------|------------|
+| 1         | 2          | 2016_06-01 |
+| 1         | 3          | 2016_06-01 |
+| 1         | 4          | 2016_06-01 |
+| 2         | 3          | 2016_06-02 |
+| 3         | 4          | 2016-06-09 |
+
+Table: request_accepted 
+| requester_id | accepter_id |accept_date | 
+| 1 | 2 | 2016_06-03 | 
+| 1 | 3 | 2016-06-08 | 
+| 2 | 3 | 2016-06-08 | 
+| 3 | 4 | 2016-06-09 | 
+| 3 | 4 | 2016-06-10 | 
  
+-- Write a query to find the overall acceptance rate of requests rounded to 2 decimals, which is the number of acceptance divide the number of requests.  
+-- For the sample data above, your query should return the following result. 
+
+|accept_rate| |-----------| | 0.80|  
+
+
+-- Note: The accepted requests are not necessarily from the table friend_request. In this case, you just need to simply count the total accepted requests (no matter whether they are in the original requests), and divide it by the number of requests to get the acceptance rate. 
+
+-- It is possible that a sender sends multiple requests to the same receiver, and a request could be accepted more than once. In this case, the ‘duplicated’ requests or acceptances are only counted once. 
+
+-- If there is no requests at all, you should return 0.00 as the accept_rate. 
+
+-- Explanation: There are 4 unique accepted requests, and there are 5 requests in total. So the rate is 0.80. 
+
+ANSWER : 
+Select coalesce(round(count(distinct b.requester_id, b.accepter_id) / count(distinct a.sender_id, a.send_to_id), 2), 0) as accept_rate from friend_request a, request_accepted b; 
+
+Select round(ifnull((select count(*) from (select distinct requester_id, accepter_id from request_accepted) as A) /  
+(select count(*) from (select distinct sender_id, send_to_id from friend_request) as B),0, 2) as accept_rate; 
+
+-- Follow-up: 
+-- Can you write a query to return the accept rate but for every month? 
+
+Select month(b.accept_date) as month, coalesce(round(count(distinct b.requester_id, b.accepter_id) /  
+count(distinct a.sender_id, a.send_to_id), 2), 0) as accept_rate from friend_request a, request_accepted b  
+where month (a.request_date) = month(b.accept_date) group by month(accept_date) 
+
 
 
