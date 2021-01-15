@@ -254,9 +254,6 @@ Result table:
 +-----------+-----------+ 
 
 ANSWER : 
--- #Using Group By 
-SELECT player_id, device_id from Activity group by player_id order by event_date; 
-
 -- #windows function rank  
 with T AS 
 Select *, rank() over(partition by player_id order by event_date) as rank_number from activity) 
@@ -366,11 +363,9 @@ Sample Output
 -- Follow up: What if more than one customer have the largest number of orders, can you find all the customer_number in this case? 
 
 ANSWER : 
-SELECT CUSTOMER_NUMBER FROM ORDERS GROUP BY CUSTOMER_NUMBER HAVING COUNT(CUSTOMER_NUMBER) > 1; 
-
 -- USING WINDOWS FUNCTION
 with T AS
- (SELECT customer_number, rank() over(partition by customer_number order by      order_number) as cust_rank from orders)
+ (SELECT customer_number, rank() over(partition by customer_number order by order_number) as cust_rank from orders)
 select customer_number from t where cust_rank > 1 order by t.cust_rank desc limit 1; 
 
 select customer_number from (select customer_number, rank() over(partition by customer_number order by order_number) as cust_rank from orders) T where T.cust_rank > 1 ORDER BY T.cust_rank DESC LIMIT 1; 
@@ -582,4 +577,441 @@ from orders o join company c on (o.com_id = c.com_id and c.name = 'RED')
 right join salesperson s on s.sales_id = o.sales_id 
 where o.sales_id is null;  
 
+--18. TRIANGLE JUDGEMENT:
+-- A pupil Tim gets homework to identify whether three line segments could possibly form a triangle. However, this assignment is very heavy because there are hundreds of records to calculate.
+-- Could you help Tim by writing a query to judge whether these three sides can form a triangle, assuming table triangle holds the length of the three sides x, y and z.
+	| x  | y  | z  |
+	| 13 | 15 | 30 |
+	| 10 | 20 | 15 |
+ 
+	--For the sample data above, your query should return the follow result:
+	| x  | y  | z  | triangle |
+	| 13 | 15 | 30 | No       |
+	| 10 | 20 | 15 | Yes      |
+	
+	ANSWER :
+	SELECT *,
+	(case 
+	   when x+y > z and y+z > x and x + z > y then 'Yes'
+	    else 'No'
+	END) AS 'triangle'
+	from triangle; 
+	
+	SELECT *, IF(x+y>z and x+z>y and y+z>x, 'Yes', 'No') as triangle FROM triangle; 
 
+-- 19. SHORTEST DISTANCE IN LINE:
+-- Table point holds the x coordinate of some points on x-axis in a plane, which are all integers.
+-- Write a query to find the shortest distance between two points in these points.
+	| x   |
+|-----|
+| -1  |
+| 0   |
+| 2   |
+
+-- The shortest distance is '1' obviously, which is from point '-1' to '0'. So the output is as below:
+	| shortest|
+|---------|
+| 1       |
+	
+	ANSWER :
+	Select coalesce(x - lag(x) over(order by x), 0) as shortest from point order by shortest asc limit 1 offset 1;
+	
+	SELECT min(distance) as shortest from
+	(
+		SELECT x, abs(x- LAG(x) OVER(order by x)) as distance from point
+	) x;
+	 
+	SELECT MIN(a.x - b.x) as shortest from point a, point b where  a.x >  b.x;
+                
+-- 20. BIGGEST SINGLE NUMBER:
+-- Table my_numbers contains many numbers in column num including duplicated ones.
+-- Can you write a SQL query to find the biggest number, which only appears once.
+	|num|+---+
+| 8 |
+| 8 |
+| 3 |
+| 3 |
+| 1 |
+| 4 |
+| 5 |
+| 6 | 
+-- For the sample data above, your query should return the following result:-|num|+---+
+| 6 |
+-- Note: If there is no such number, just output null.
+	
+	ANSWER :
+	select num from my_numbers group by num having count(num) = 1 order by num desc limit 1;
+	 
+	SELECT MAX(num) AS num FROM
+	    (SELECT num FROM my_numbers
+	    GROUP BY num HAVING COUNT(num) = 1) AS t;
+                
+-- 21. NOT BORING MOVIES:
+-- X city opened a new cinema, many people would like to go to this cinema. The cinema also gives out a poster indicating the movies’ ratings and descriptions.
+-- Please write a SQL query to output movies with an odd numbered ID and a description that is not 'boring'. Order the result by rating.
+	 
+For example, table cinema:
+|   id    | movie     |  description |  rating   |	
+|   1     | War       |   great 3D   |   8.9     |
+|   2     | Science   |   fiction    |   8.5     |
+|   3     | irish     |   boring     |   6.2     |
+|   4     | Ice song  |   Fantacy    |   8.6     |
+|   5     | House card|   Interesting|   9.1     |
+
+-- For the example above, the output should be:
+	|   id    | movie     |  description |  rating   |
+	|   5     | House card|   Interesting|   9.1     |
+	|   1     | War       |   great 3D   |   8.9     |
+
+	ANSWER :
+select * from cinema where id % 2 <> 0 and description <> 'boring' order by rating desc;
+select * from cinema where id % 2 <> 0 and description not like '%boring%' order by rating desc;
+
+-- 22. SWAP SALARY:
+-- Given a table salary, such as the one below, that has m=male and f=female values. Swap all f and m values (i.e., change all f values to m and vice versa) with a single update statement and no intermediate temp table.
+-- Note that you must write a single update statement, DO NOT write any select statement for this problem.
+-- Example:
+	| id | name | sex | salary |
+| 1  | A    | m   | 2500   |
+| 2  | B    | f   | 1500   |
+| 3  | C    | m   | 5500   |
+| 4  | D    | f   | 500    |
+-- After running your update statement, the above salary table should have the following rows:
+	| id | name | sex | salary |
+| 1  | A    | f   | 2500   |
+| 2  | B    | m   | 1500   |
+| 3  | C    | f   | 5500   |
+| 4  | D    | m   | 500    |
+	
+	ANSWER :
+	UPDATE SALARY SET SEX = 
+	CASE sex
+	WHEN 'f' THEN 'm'
+	ELSE 'f'
+	END ; 
+	
+	UPDATE salary SET sex = IF(sex='m','f','m');
+
+-- 23. ACTORS AND DIRECTORS WHO COOPERATED ATLEAST THREE TIMES:
+-- Table: ActorDirector
+	+-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| actor_id    | int     |
+| director_id | int     |
+| timestamp   | int     |
++-------------+---------+
+-- timestamp is the primary key column for this table.
+	
+-- Write a SQL query for a report that provides the pairs (actor_id, director_id) where the actor have cooperated with the director at least 3 times.
+-- Example:
+	ActorDirector table:
++-------------+-------------+-------------+
+| actor_id    | director_id | timestamp   |
++-------------+-------------+-------------+
+| 1           | 1           | 0           |
+| 1           | 1           | 1           |
+| 1           | 1           | 2           |
+| 1           | 2           | 3           |
+| 1           | 2           | 4           |
+| 2           | 1           | 5           |
+| 2           | 1           | 6           |
++-------------+-------------+-------------+
+Result table:
++-------------+-------------+
+| actor_id    | director_id |
++-------------+-------------+
+| 1           | 1           |
++-------------+-------------+
+-- The only pair is (1, 1) where they cooperated exactly 3 times.
+	
+ANSWER :
+	select actor_id, director_id from ActorDirector group by actor_id, director_id having count(*) >= 3;
+               
+ SELECT actor_id, director_id FROM 
+    (SELECT actor_id, director_id, COUNT(CONCAT(actor_id,"_", director_id)) as pairCount
+     FROM ActorDirector 
+     GROUP BY CONCAT(actor_id,"_", director_id)) as T WHERE pairCount > 2
+                     
+-- 24. PRODUCT SALES ANALYSIS I
+	Table: Sales
+	+-------------+-------+
+| Column Name | Type  |
++-------------+-------+
+| sale_id     | int   |
+| product_id  | int   |
+| year        | int   |
+| quantity    | int   |
+| price       | int   |
++-------------+-------+
+-- (sale_id, year) is the primary key of this table.
+-- product_id is a foreign key to Product table.
+-- Note that the price is per unit.
+	Table: Product
+	+--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| product_id   | int     |
+| product_name | varchar |
++--------------+---------+
+-- product_id is the primary key of this table.
+-- Write an SQL query that reports all product names of the products in the Sales table along with their selling year and price.
+For example:
+	Sales table:
++---------+------------+------+----------+-------+
+| sale_id | product_id | year | quantity | price |
++---------+------------+------+----------+-------+ 
+| 1       | 100        | 2008 | 10       | 5000  |
+| 2       | 100        | 2009 | 12       | 5000  |
+| 7       | 200        | 2011 | 15       | 9000  |
++---------+------------+------+----------+-------+
+                     
+Product table:
++------------+--------------+
+| product_id | product_name |
++------------+--------------+
+| 100        | Nokia        |
+| 200        | Apple        |
+| 300        | Samsung      |
++------------+--------------+
+                     
+Result table:
++--------------+-------+-------+
+| product_name | year  | price |
++--------------+-------+-------+
+| Nokia        | 2008  | 5000  |
+| Nokia        | 2009  | 5000  |
+| Apple        | 2011  | 9000  |
++--------------+-------+-------+
+	
+ANSWER :
+	SELECT distinct b.product_name, a.year, a.price from Sales a Left Join Product b on a.product_id = b.product_id;
+	
+	SELECT DISTINCT P.product_name, S.year, S.price 
+	FROM (SELECT DISTINCT product_id, year, price FROM Sales) S
+	INNER JOIN Product AS P USING (product_id);
+                    
+-- 25. PRODUCT SALES ANALYSIS II
+-- Table: Sales
+	+-------------+-------+
+| Column Name | Type  |
++-------------+-------+
+| sale_id     | int   |
+| product_id  | int   |
+| year        | int   |
+| quantity    | int   |
+| price       | int   |
++-------------+-------+
+-- sale_id is the primary key of this table.
+-- product_id is a foreign key to Product table.
+-- Note that the price is per unit.
+	Table: Product
+	+--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| product_id   | int     |
+| product_name | varchar |
++--------------+---------+
+-- product_id is the primary key of this table.
+-- Write an SQL query that reports the total quantity sold for every product id.
+-- The query result format is in the following example:
+Sales table:
++---------+------------+------+----------+-------+
+| sale_id | product_id | year | quantity | price |
++---------+------------+------+----------+-------+ 
+| 1       | 100        | 2008 | 10       | 5000  |
+| 2       | 100        | 2009 | 12       | 5000  |
+| 7       | 200        | 2011 | 15       | 9000  |
++---------+------------+------+----------+-------+
+
+Product table:
++------------+--------------+
+| product_id | product_name |
++------------+--------------+
+| 100        | Nokia        |
+| 200        | Apple        |
+| 300        | Samsung      |
++------------+--------------+
+Result table:
++--------------+----------------+
+| product_id   | total_quantity |
++--------------+----------------+
+| 100          | 22             |
+| 200          | 15             |
++--------------+----------------+
+	
+ANSWER :
+	SELECT product_id, sum(quantity) as total_quantity from Sales group by product_id;
+                     
+-- 26. PROJECT EMPLOYEES I
+Table: Project
+	+-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| project_id  | int     |
+| employee_id | int     |
++-------------+---------+
+-- (project_id, employee_id) is the primary key of this table.
+-- employee_id is a foreign key to Employee table.
+
+	Table: Employee
+	+------------------+---------+
+| Column Name      | Type    |
++------------------+---------+
+| employee_id      | int     |
+| name             | varchar |
+| experience_years | int     |
++------------------+---------+
+-- employee_id is the primary key of this table.
+-- Write an SQL query that reports the average experience years of all the employees for each project, rounded to 2 digits.
+-- The query result format is in the following example:
+	Project table:
++-------------+-------------+
+| project_id  | employee_id |
++-------------+-------------+
+| 1           | 1           |
+| 1           | 2           |
+| 1           | 3           |
+| 2           | 1           |
+| 2           | 4           |
++-------------+-------------+
+Employee table:
++-------------+--------+------------------+
+| employee_id | name   | experience_years |
++-------------+--------+------------------+
+| 1           | Khaled | 3                |
+| 2           | Ali    | 2                |
+| 3           | John   | 1                |
+| 4           | Doe    | 2                |
++-------------+--------+------------------+
+Result table:
++-------------+---------------+
+| project_id  | average_years |
++-------------+---------------+
+| 1           | 2.00          |
+| 2           | 2.50          |
++-------------+---------------+
+-- The average experience years for the first project is (3 + 2 + 1) / 3 = 2.00 and for the second project is (3 + 2) / 2 = 2.50
+	
+ANSWER :
+	select project_id, round(avg(experience_years), 2) as average_years 
+	from project a Left join employee b 
+	on a.employee_id = b.employee_id 
+	group by a.project_id;
+	
+	select a.project_id, round(sum(b.experience_years)/count(b.employee_id), 2) as average_years 
+	from project a left join employee b on a.employee_id = b.employee_id
+	group by a.project_id;
+
+-- 27. PROJECT EMPLOYEES II
+	Table: Project
+	+-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| project_id  | int     |
+| employee_id | int     |
++-------------+---------+
+-- (project_id, employee_id) is the primary key of this table.
+-- employee_id is a foreign key to Employee table.
+	Table: Employee
+	+------------------+---------+
+| Column Name      | Type    |
+
+	+------------------+---------+
+| employee_id      | int     |
+| name             | varchar |
+| experience_years | int     |
++------------------+---------+
+-- employee_id is the primary key of this table.
+-- Write an SQL query that reports all the projects that have the most employees.
+-- The query result format is in the following example:
+	Project table:
++-------------+-------------+
+| project_id  | employee_id |
++-------------+-------------+
+| 1           | 1           |
+| 1           | 2           |
+| 1           | 3           |
+| 2           | 1           |
+| 2           | 4           |
++-------------+-------------+
+
+Employee table:
++-------------+--------+------------------+
+| employee_id | name   | experience_years |
++-------------+--------+------------------+
+| 1           | Khaled | 3                |
+| 2           | Ali    | 2                |
+| 3           | John   | 1                |
+| 4           | Doe    | 2                |
++-------------+--------+------------------+
+Result table:
++-------------+
+| project_id  |
++-------------+
+| 1           |
++-------------+
+-- The first project has 3 employees while the second one has 2.
+	
+ANSWER :
+	select project_id from project group by project_id 
+	having count(employee_id) =
+	(select count(employee_id) from project group by project_id order by count(employee_id) desc limit 1); 
+	
+	Select project_id from (select distinct project_id, dense_rank() over(order by count(employee_id) desc) as cnt_rank 
+	from project group by project_id) t where cnt_rank = 1;
+
+-- 28. SALES ANALYSIS I
+Table: Product
+	+--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| product_id   | int     |
+| product_name | varchar |
+| unit_price   | int     |
++--------------+---------+
+-- product_id is the primary key of this table.
+	Table: Sales
+	+-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| seller_id   | int     |
+| product_id  | int     |
+| buyer_id    | int     |
+| sale_date   | date    |
+| quantity    | int     |
+| price       | int     |
++------ ------+---------+
+-- This table has no primary key, it can have repeated rows.
+-- product_id is a foreign key to Product table.
+-- Write an SQL query that reports the best seller by total sales price, If there is a tie, report them all.
+-- The query result format is in the following example:
+	Product table:
++------------+--------------+------------+
+| product_id | product_name | unit_price |
++------------+--------------+------------+
+| 1          | S8           | 1000       |
+| 2          | G4           | 800        |
+| 3          | iPhone       | 1400       |
++------------+--------------+------------+
+Sales table:
++-----------+------------+----------+------------+----------+-------+
+| seller_id | product_id | buyer_id | sale_date  | quantity | price |
++-----------+------------+----------+------------+----------+-------+
+| 1         | 1          | 1        | 2019-01-21 | 2        | 2000  |
+| 1         | 2          | 2        | 2019-02-17 | 1        | 800   |
+| 2         | 2          | 3        | 2019-06-02 | 1        | 800   |
+| 3         | 3          | 4        | 2019-05-13 | 2        | 2800  |
++-----------+------------+----------+------------+----------+-------+
+Result table:
++-------------+
+| seller_id   |
++-------------+
+| 1           |
+| 3           |
++-------------+
+-- Both sellers with id 1 and 3 sold products with the most total price of 2800.
+	
+ANSWER :
+select seller_id from sales group by seller_id having sum(price) = (select sum(price) from sales group by seller_id order by sum(price) desc limit 1);
+                     
